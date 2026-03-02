@@ -12,7 +12,7 @@ pipeline {
         }
         stage("build") {
             when {
-                expresion {
+                expression {
                     BRANCH_NAME == "main"
                 }
             }
