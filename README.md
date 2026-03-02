@@ -1,18 +1,17 @@
-# Jenkins CI Pipeline – Pipeline Job
+# Jenkins CI Pipeline – Multibranch Pipeline Job
 
 ## Project Overview
 
-This project demonstrates how to create a Continuous Integration (CI) pipeline for a Java Maven application using a **Jenkins Pipeline Job**.
+This setup demonstrates how to configure a **Multibranch Pipeline Job** in Jenkins for a Java Maven application.
 
-Unlike the Freestyle job, this pipeline is fully defined in a `Jenkinsfile` located in the root directory of the repository.
+Unlike the standard Pipeline job, a Multibranch Pipeline:
 
-The pipeline performs the following stages:
+- Automatically scans the Git repository
+- Detects branches containing a `Jenkinsfile`
+- Creates separate pipeline jobs per branch
+- Automatically builds new branches when pushed
 
-1. Connect to Git repository
-2. Build JAR using Maven
-3. Build Docker image
-4. Login to DockerHub
-5. Push Docker image to private repository
+This allows true branch-based CI/CD.
 
 ---
 
@@ -24,153 +23,154 @@ The pipeline performs the following stages:
 - Git
 - Java
 - Maven
-- Jenkinsfile (Pipeline as Code)
+- Jenkinsfile (already created in project root)
 
 ---
 
-## 1️⃣ Run Jenkins in Docker
+## Prerequisites
 
-Start Jenkins:
+All foundational setup steps are already covered in:
 
-```bash
-docker run -d \
-  --name jenkins \
-  -p 8080:8080 -p 50000:50000 \
-  jenkins/jenkins:lts
-```
+- Freestyle Job README
+- Pipeline Job README
 
-Access Jenkins at:
+That includes:
 
-```
-http://<server-ip>:8080
-```
+- Running Jenkins inside Docker
+- Mounting `/var/run/docker.sock`
+- Installing Maven and Docker inside Jenkins container
+- Creating Git credentials
+- Creating DockerHub credentials
 
----
-
-## 2️⃣ Make Docker Available Inside Jenkins Container
-
-Since Jenkins runs inside a container, Docker must be made available.
-
-Restart Jenkins with Docker socket mounted:
-
-```bash
-docker run -d \
-  --name jenkins \
-  -p 8080:8080 -p 50000:50000 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  jenkins/jenkins:lts
-```
-
-Enter container:
-
-```bash
-docker exec -it jenkins bash
-```
-
-Install required tools:
-
-```bash
-apt update
-apt install maven docker.io -y
-```
-
-Verify:
-
-```bash
-mvn -v
-docker -v
-```
+⚠️ Ensure those steps are completed before proceeding.
 
 ---
 
-## 3️⃣ Configure Jenkins Credentials
+## Multibranch Pipeline Concept
 
-In Jenkins:
+A Multibranch Pipeline job:
 
-1. Go to **Manage Jenkins**
-2. Click **Credentials**
-3. Add:
-    - Git repository credentials
-    - DockerHub username/password credentials
+- Connects to a Git repository
+- Scans all branches
+- Automatically builds branches that contain a `Jenkinsfile`
+- Creates individual pipeline jobs dynamically
 
-Use appropriate credential IDs referenced inside the `Jenkinsfile`.
-
----
-
-## 4️⃣ Jenkinsfile
-
-The pipeline logic is defined in the `Jenkinsfile` located in the root of the repository.
-
-It contains stages for:
-
-- Checkout
-- Build (Maven)
-- Docker Build
-- Docker Login
-- Docker Push
-
-No build logic is configured inside Jenkins UI — everything is controlled by the Jenkinsfile.
+Each branch runs using its own version of the Jenkinsfile.
 
 ---
 
-## 5️⃣ Create Pipeline Job
+## Create Multibranch Pipeline Job
 
-1. Click **New Item**
-2. Enter job name
-3. Select **Pipeline**
+1. Go to **New Item**
+2. Enter job name (e.g., `java-app-multibranch`)
+3. Select **Multibranch Pipeline**
 4. Click **OK**
 
 ---
 
-### Pipeline Configuration
+## Configure Branch Source
 
-Under **Pipeline** section:
+Under **Branch Sources**:
 
-- Definition: **Pipeline script from SCM**
-- SCM: **Git**
-- Repository URL: `<your-repo-url>`
-- Credentials: Select configured credentials
-- Branch: `*/main` (or your branch name)
+1. Click **Add Source**
+2. Select **Git**
+3. Enter:
+    - Repository URL
+    - Credentials (previously configured)
+4. Save configuration
+
+---
+
+## Build Configuration
+
+Under **Build Configuration**:
+
+- Mode: **by Jenkinsfile**
 - Script Path: `Jenkinsfile`
 
-Click **Save**
+(Ensure the Jenkinsfile is in the root directory.)
 
 ---
 
-## 6️⃣ Pipeline Execution Flow
+## Branch Discovery
 
-When triggered, Jenkins will:
+By default, Jenkins will:
 
-1. Clone repository
-2. Detect Jenkinsfile
-3. Execute defined pipeline stages
-4. Build JAR with Maven
-5. Build Docker image
-6. Login to DockerHub
-7. Push Docker image to private repository
+- Discover all branches
+- Create a sub-job for each branch
+- Automatically build branches containing Jenkinsfile
 
-All stages and logic are defined inside the Jenkinsfile.
+You may configure:
+
+- Branch filtering
+- PR discovery (optional)
 
 ---
 
-## 7️⃣ Trigger the Build
+## Scan Repository
 
-Click **Build Now**
+Click:
 
-Monitor execution in:
+**Scan Multibranch Pipeline Now**
 
-- **Stage View**
-- **Console Output**
+Jenkins will:
+
+- Scan repository
+- Detect branches
+- Create pipeline jobs per branch
+
+---
+
+## How It Works
+
+When you:
+
+- Create a new branch
+- Push it to Git
+- Include a Jenkinsfile
+
+Jenkins will:
+
+- Detect the branch
+- Automatically create a new pipeline job
+- Run the pipeline defined in that branch
+
+No manual job creation required.
+
+---
+
+## CI/CD Flow Per Branch
+
+For each branch:
+
+1. Clone branch
+2. Run Maven build
+3. Build Docker image
+4. Login to DockerHub
+5. Push Docker image
+
+(All defined inside the Jenkinsfile.)
+
+---
+
+## Benefits of Multibranch Pipeline
+
+- Fully automated branch-based CI
+- No manual job duplication
+- Supports feature branches
+- Scalable for team environments
+- Production-ready CI structure
 
 ---
 
 ## Project Outcome
 
-This Pipeline Job:
+With this setup, you now have:
 
-- Uses Infrastructure as Code (Jenkinsfile)
-- Provides version-controlled CI configuration
-- Builds and pushes Docker images automatically
-- Eliminates manual build steps in Jenkins UI
+- Freestyle Job (UI-based CI)
+- Pipeline Job (Pipeline as Code)
+- Multibranch Pipeline (Automated branch-based CI)
 
-This approach is more scalable and production-ready compared to Freestyle jobs.
+This completes a full Jenkins CI pipeline implementation using:
+
+Jenkins + Docker + Maven + Git + Java
