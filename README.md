@@ -1,176 +1,162 @@
-# Jenkins CI Pipeline – Multibranch Pipeline Job
+# Deploy Jenkins Server in a Docker Container
 
-## Project Overview
+## Project Purpose
 
-This setup demonstrates how to configure a **Multibranch Pipeline Job** in Jenkins for a Java Maven application.
-
-Unlike the standard Pipeline job, a Multibranch Pipeline:
-
-- Automatically scans the Git repository
-- Detects branches containing a `Jenkinsfile`
-- Creates separate pipeline jobs per branch
-- Automatically builds new branches when pushed
-
-This allows true branch-based CI/CD.
+This repository demonstrates how to deploy a Jenkins server inside a Docker container on a remote Ubuntu server.
 
 ---
 
 ## Technologies Used
 
-- Jenkins (running inside Docker container)
+- Jenkins
 - Docker
-- Linux
-- Git
-- Java
-- Maven
-- Jenkinsfile (already created in project root)
+- DigitalOcean
+- Linux (Ubuntu)
 
 ---
 
-## Prerequisites
+## Project Description
 
-All foundational setup steps are already covered in:
+This project covers:
 
-- Freestyle Job README
-- Pipeline Job README
-
-That includes:
-
-- Running Jenkins inside Docker
-- Mounting `/var/run/docker.sock`
-- Installing Maven and Docker inside Jenkins container
-- Creating Git credentials
-- Creating DockerHub credentials
-
-⚠️ Ensure those steps are completed before proceeding.
+- Creating an Ubuntu Droplet on DigitalOcean
+- Installing Docker on the server
+- Running Jenkins as a Docker container
+- Exposing Jenkins UI
+- Mounting Docker socket to allow Jenkins run Docker builds
 
 ---
 
-## Multibranch Pipeline Concept
+## Step 1: Create Ubuntu Server on DigitalOcean
 
-A Multibranch Pipeline job:
-
-- Connects to a Git repository
-- Scans all branches
-- Automatically builds branches that contain a `Jenkinsfile`
-- Creates individual pipeline jobs dynamically
-
-Each branch runs using its own version of the Jenkinsfile.
+1. Log in to DigitalOcean
+2. Create a new Droplet
+3. Choose Ubuntu (latest LTS recommended)
+4. Select size and region
+5. Add SSH key (recommended)
+6. Create Droplet
 
 ---
 
-## Create Multibranch Pipeline Job
+## Step 2: Connect to the Server
 
-1. Go to **New Item**
-2. Enter job name (e.g., `java-app-multibranch`)
-3. Select **Multibranch Pipeline**
-4. Click **OK**
+SSH into the server:
 
----
-
-## Configure Branch Source
-
-Under **Branch Sources**:
-
-1. Click **Add Source**
-2. Select **Git**
-3. Enter:
-    - Repository URL
-    - Credentials (previously configured)
-4. Save configuration
+```bash
+ssh USER@<Droplet-IP>
+```
 
 ---
 
-## Build Configuration
+## Step 3: Verify Docker Installation
 
-Under **Build Configuration**:
+Check Docker version:
 
-- Mode: **by Jenkinsfile**
-- Script Path: `Jenkinsfile`
+```bash
+docker --version
+```
 
-(Ensure the Jenkinsfile is in the root directory.)
-
----
-
-## Branch Discovery
-
-By default, Jenkins will:
-
-- Discover all branches
-- Create a sub-job for each branch
-- Automatically build branches containing Jenkinsfile
-
-You may configure:
-
-- Branch filtering
-- PR discovery (optional)
+If Docker is not installed, install it first before proceeding.
 
 ---
 
-## Scan Repository
+## Step 4: Run Jenkins as a Docker Container
 
-Click:
+Run the following command:
 
-**Scan Multibranch Pipeline Now**
-
-Jenkins will:
-
-- Scan repository
-- Detect branches
-- Create pipeline jobs per branch
-
----
-
-## How It Works
-
-When you:
-
-- Create a new branch
-- Push it to Git
-- Include a Jenkinsfile
-
-Jenkins will:
-
-- Detect the branch
-- Automatically create a new pipeline job
-- Run the pipeline defined in that branch
-
-No manual job creation required.
+```bash
+docker run -p 8080:8080 -p 50000:50000 -d \
+-v jenkins_home:/var/jenkins_home \
+-v /var/run/docker.sock:/var/run/docker.sock \
+--name jenkins \
+jenkins/jenkins:lts
+```
 
 ---
 
-## CI/CD Flow Per Branch
+## What This Command Does
 
-For each branch:
+### Port Mapping
 
-1. Clone branch
-2. Run Maven build
-3. Build Docker image
-4. Login to DockerHub
-5. Push Docker image
+- `8080` → Jenkins Web UI
+- `50000` → Jenkins agent communication
 
-(All defined inside the Jenkinsfile.)
+### Volume Mounts
 
----
+`-v jenkins_home:/var/jenkins_home`  
+Creates a Docker volume to persist Jenkins data.
 
-## Benefits of Multibranch Pipeline
-
-- Fully automated branch-based CI
-- No manual job duplication
-- Supports feature branches
-- Scalable for team environments
-- Production-ready CI structure
+`-v /var/run/docker.sock:/var/run/docker.sock`  
+This is a **bind mount**, not a Docker volume.
 
 ---
 
-## Project Outcome
+## What Mounting `/var/run/docker.sock` Means
 
-With this setup, you now have:
+Mounting:
 
-- Freestyle Job (UI-based CI)
-- Pipeline Job (Pipeline as Code)
-- Multibranch Pipeline (Automated branch-based CI)
+```
+/var/run/docker.sock:/var/run/docker.sock
+```
 
-This completes a full Jenkins CI pipeline implementation using:
+Means:
 
-Jenkins + Docker + Maven + Git + Java
+1. It maps the host Docker daemon socket
+2. Jenkins uses the host’s Docker engine
+3. It is not stored data — it is a live connection
+
+---
+
+## Security Implications
+
+This setup gives Jenkins **root-level control of the host machine**.
+
+Anyone who can run builds in Jenkins can:
+
+- Start privileged containers
+- Mount host filesystem
+- Access secrets
+- Control the Docker daemon
+
+This is effectively giving Jenkins root access to the server.
+
+This is acceptable for learning and practice environments.
+
+---
+
+## Production Recommendation
+
+For production environments, a safer approach would be:
+
+- Remote Docker Agents
+- Kubernetes-based Jenkins agents
+
+These isolate build execution from the host.
+
+---
+
+## Access Jenkins UI
+
+After container startup, Jenkins will be available at:
+
+```
+http://<Droplet-IP>:8080
+```
+
+Follow the on-screen instructions to:
+
+- Retrieve the initial admin password
+- Install suggested plugins
+- Create admin user
+
+---
+
+## Result
+
+You now have:
+
+- Jenkins running inside Docker
+- Persistent Jenkins data
+- Docker available inside Jenkins for building images
+
+This completes Jenkins deployment in a Docker container on a DigitalOcean Ubuntu server.
