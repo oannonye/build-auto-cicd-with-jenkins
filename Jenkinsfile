@@ -23,10 +23,12 @@ pipeline {
             }
         }
 
-        stage("build image") {
+        stage("build image and push image") {
             steps {
                 script {
-                    buildImage 'onyebuchia/app-store:jma-2.1'
+                    buildImage 'onyebuchia/app-store:jma-2.0'
+                    dockerLogin()
+                    dockerPush 'onyebuchia/app-store:jma-2.0'
                 }
             }
         }
