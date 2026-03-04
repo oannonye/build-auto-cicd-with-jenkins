@@ -26,7 +26,7 @@ pipeline {
         stage("build image") {
             steps {
                 script {
-                    buildImage()
+                    buildImage 'onyebuchia/app-store:jma-2.1'
                 }
             }
         }
