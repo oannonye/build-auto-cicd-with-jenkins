@@ -18,7 +18,7 @@ pipeline {
         stage("build jar") {
             steps {
                 script {
-                    buildjar()
+                    buildJar()
                 }
             }
         }
@@ -26,7 +26,7 @@ pipeline {
         stage("build image") {
             steps {
                 script {
-                    buildimage()
+                    buildImage()
                 }
             }
         }
