@@ -52,14 +52,14 @@ pipeline {
         stage('commit version update') {
             steps{
                 script{
-                    withCredentials([[usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                         sh 'git config --global user.email "jenkins@email.com"'
                         sh 'git config --global user.name "jenkins"'
 
                         sh 'git status'
                         sh 'git branch'
                         sh 'git config --list'
-                        
+
                         sh "git remote set-url origin https://${USER}:${PASS}@github.com/oannonye/build-auto-cicd-with-jenkins.git "
                         sh 'git add .'
                         sh 'git commit -m "ci: version bump"'
