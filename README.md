@@ -110,7 +110,7 @@ stage('Commit Version Update') {
         git config user.email "jenkins@email.com"
         git config user.name "Jenkins CI"
         git add .
-        git commit -m "Increment application version to ${APP_VERSION}" || echo "No changes to commit"
+        git commit -m "Increment application version to ${IMAGE_NAME}" || echo "No changes to commit"
         git push origin HEAD:<branch>
         '''
     }
